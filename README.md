@@ -65,7 +65,12 @@ AdyenDL is available through a gradle task. To install it, follow the steps belo
 Create environment configuration and set up a payment processor.
 
 ```java
-configuration = new Configuration(Environment.LIVE, "ENTER_URL", "ENTER_URL", "ENTER_URL");
+configuration = new Configuration(
+    Environment.LIVE, //  Can be either TEST or  LIVE.
+    "ENTER_URL",  //  Your server URL to calculate a signature for the payment.
+    "ENTER_URL",  // Your server URL to calculate a signature for the payment's result.
+    "ENTER_URL" // Your server URL to fetch a status of the payment.
+);
 ```
 
 Create a payment object.
