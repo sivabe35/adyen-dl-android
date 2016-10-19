@@ -83,6 +83,8 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
                     });
                 } catch (JSONException e) {
                     asyncOperationCallback.onFailure(e, e.getMessage());
+                } catch (UnsupportedEncodingException e) {
+                    asyncOperationCallback.onFailure(e, e.getMessage());
                 }
             }
 
@@ -93,18 +95,16 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
         });
     }
 
-    private String buildPostBodyForPaymentMethodsRequest(JSONObject merchantSignatureResponse) {
-        String httpPostBody = null;
-        try {
-            String paymentAmount = URLEncoder.encode(merchantSignatureResponse.getString("paymentAmount"), "UTF-8");
-            String merchantReference = URLEncoder.encode(merchantSignatureResponse.getString("merchantReference"), "UTF-8");
-            String skinCode = URLEncoder.encode(merchantSignatureResponse.getString("skinCode"), "UTF-8");
-            String merchantAccount = URLEncoder.encode(merchantSignatureResponse.getString("merchantAccount"), "UTF-8");
-            String countryCode = URLEncoder.encode(merchantSignatureResponse.getString("countryCode"), "UTF-8");
-            String currencyCode = URLEncoder.encode(merchantSignatureResponse.getString("currencyCode"), "UTF-8");
-            String sessionValidity = URLEncoder.encode(merchantSignatureResponse.getString("sessionValidity"), "UTF-8");
-            String merchantSig = URLEncoder.encode(merchantSignatureResponse.getString("merchantSig"), "UTF-8");
-            httpPostBody = "paymentAmount=" + paymentAmount +
+    private String buildPostBodyForPaymentMethodsRequest(JSONObject merchantSignatureResponse) throws JSONException, UnsupportedEncodingException {
+        String paymentAmount = URLEncoder.encode(merchantSignatureResponse.getString("paymentAmount"), "UTF-8");
+        String merchantReference = URLEncoder.encode(merchantSignatureResponse.getString("merchantReference"), "UTF-8");
+        String skinCode = URLEncoder.encode(merchantSignatureResponse.getString("skinCode"), "UTF-8");
+        String merchantAccount = URLEncoder.encode(merchantSignatureResponse.getString("merchantAccount"), "UTF-8");
+        String countryCode = URLEncoder.encode(merchantSignatureResponse.getString("countryCode"), "UTF-8");
+        String currencyCode = URLEncoder.encode(merchantSignatureResponse.getString("currencyCode"), "UTF-8");
+        String sessionValidity = URLEncoder.encode(merchantSignatureResponse.getString("sessionValidity"), "UTF-8");
+        String merchantSig = URLEncoder.encode(merchantSignatureResponse.getString("merchantSig"), "UTF-8");
+        String httpPostBody = "paymentAmount=" + paymentAmount +
                            "&merchantReference=" + merchantReference +
                            "&skinCode=" + skinCode +
                            "&merchantAccount=" + merchantAccount +
@@ -112,11 +112,6 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
                            "&currencyCode=" + currencyCode +
                            "&sessionValidity=" + sessionValidity +
                            "&merchantSig=" + merchantSig;
-        } catch (UnsupportedEncodingException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (JSONException e) {
-            Log.e(tag, e.getMessage(), e);
-        }
 
         return httpPostBody;
     }

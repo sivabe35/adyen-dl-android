@@ -84,6 +84,8 @@ public class RetrieveRedirectUrlServiceImpl implements RetrieveRedirectUrlServic
                             subscriber.onNext(responseUrl);
                             subscriber.onCompleted();
                         } catch (JSONException e) {
+
+                        } catch (UnsupportedEncodingException e) {
                             onFailure(e, e.getMessage());
                         }
                     }
@@ -115,36 +117,29 @@ public class RetrieveRedirectUrlServiceImpl implements RetrieveRedirectUrlServic
         });
     }
 
-    private String buildPostBodyForRedirectUrlRequest(JSONObject merchantSignatureResponse) {
-        String httpPostBody = null;
-        try {
-            String brandCode = URLEncoder.encode(merchantSignatureResponse.getString("brandCode"), "UTF-8");
-            String issuerId = null;
-            String paymentAmount = URLEncoder.encode(merchantSignatureResponse.getString("paymentAmount"), "UTF-8");
-            String merchantReference = URLEncoder.encode(merchantSignatureResponse.getString("merchantReference"), "UTF-8");
-            String skinCode = URLEncoder.encode(merchantSignatureResponse.getString("skinCode"), "UTF-8");
-            String merchantAccount = URLEncoder.encode(merchantSignatureResponse.getString("merchantAccount"), "UTF-8");
-            String countryCode = URLEncoder.encode(merchantSignatureResponse.getString("countryCode"), "UTF-8");
-            String currencyCode = URLEncoder.encode(merchantSignatureResponse.getString("currencyCode"), "UTF-8");
-            String sessionValidity = URLEncoder.encode(merchantSignatureResponse.getString("sessionValidity"), "UTF-8");
-            String merchantSig = URLEncoder.encode(merchantSignatureResponse.getString("merchantSig"), "UTF-8");
-            httpPostBody = "brandCode=" + brandCode +
-                           "&paymentAmount=" + paymentAmount +
-                           "&merchantReference=" + merchantReference +
-                           "&skinCode=" + skinCode +
-                           "&merchantAccount=" + merchantAccount +
-                           "&countryCode=" + countryCode +
-                           "&currencyCode=" + currencyCode +
-                           "&sessionValidity=" + sessionValidity +
-                           "&merchantSig=" + merchantSig;
-            if(!merchantSignatureResponse.isNull("issuerId")){
-                issuerId = URLEncoder.encode(merchantSignatureResponse.getString("issuerId"), "UTF-8");
-                httpPostBody = httpPostBody + "&issuerId=" + issuerId;
-            }
-        } catch (UnsupportedEncodingException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (JSONException e) {
-            Log.e(tag, e.getMessage(), e);
+    private String buildPostBodyForRedirectUrlRequest(JSONObject merchantSignatureResponse) throws JSONException, UnsupportedEncodingException {
+        String brandCode = URLEncoder.encode(merchantSignatureResponse.getString("brandCode"), "UTF-8");
+        String issuerId = null;
+        String paymentAmount = URLEncoder.encode(merchantSignatureResponse.getString("paymentAmount"), "UTF-8");
+        String merchantReference = URLEncoder.encode(merchantSignatureResponse.getString("merchantReference"), "UTF-8");
+        String skinCode = URLEncoder.encode(merchantSignatureResponse.getString("skinCode"), "UTF-8");
+        String merchantAccount = URLEncoder.encode(merchantSignatureResponse.getString("merchantAccount"), "UTF-8");
+        String countryCode = URLEncoder.encode(merchantSignatureResponse.getString("countryCode"), "UTF-8");
+        String currencyCode = URLEncoder.encode(merchantSignatureResponse.getString("currencyCode"), "UTF-8");
+        String sessionValidity = URLEncoder.encode(merchantSignatureResponse.getString("sessionValidity"), "UTF-8");
+        String merchantSig = URLEncoder.encode(merchantSignatureResponse.getString("merchantSig"), "UTF-8");
+        String httpPostBody = "brandCode=" + brandCode +
+                       "&paymentAmount=" + paymentAmount +
+                       "&merchantReference=" + merchantReference +
+                       "&skinCode=" + skinCode +
+                       "&merchantAccount=" + merchantAccount +
+                       "&countryCode=" + countryCode +
+                       "&currencyCode=" + currencyCode +
+                       "&sessionValidity=" + sessionValidity +
+                       "&merchantSig=" + merchantSig;
+        if(!merchantSignatureResponse.isNull("issuerId")){
+            issuerId = URLEncoder.encode(merchantSignatureResponse.getString("issuerId"), "UTF-8");
+            httpPostBody = httpPostBody + "&issuerId=" + issuerId;
         }
 
         return httpPostBody;

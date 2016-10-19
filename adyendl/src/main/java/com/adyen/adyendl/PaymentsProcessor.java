@@ -50,10 +50,19 @@ public class PaymentsProcessor {
 
     }
 
-    public String fetchRedirectUrl(Configuration configuration, Payment payment, String brandCode, String issuerId) {
+    public void fetchRedirectUrl(Configuration configuration, Payment payment, String brandCode, String issuerId, final AsyncOperationCallback asyncOperationCallback) {
         RetrieveRedirectUrlServiceImpl retrieveRedirectUrlImpl = new RetrieveRedirectUrlServiceImpl(configuration, payment, brandCode, issuerId);
-        String redirectUrlStr = retrieveRedirectUrlImpl.fetchRedirectUrl();
-        return redirectUrlStr;
+        retrieveRedirectUrlImpl.fetchRedirectUrl(new AsyncOperationCallback() {
+            @Override
+            public void onSuccess(String response) {
+                asyncOperationCallback.onSuccess(response);
+            }
+
+            @Override
+            public void onFailure(Throwable e, String errorMessage) {
+                asyncOperationCallback.onFailure(e, errorMessage);
+            }
+        });
     }
 
     public String verifyResultUrl(String resultUrl) {

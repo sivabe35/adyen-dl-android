@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ExpandableListView;
 
@@ -11,6 +12,7 @@ import com.adyen.adyendl.PaymentsProcessor;
 import com.adyen.adyendl.pojo.Configuration;
 import com.adyen.adyendl.pojo.Payment;
 import com.adyen.adyendl.pojo.PaymentMethod;
+import com.adyen.adyendl.util.AsyncOperationCallback;
 import com.adyen.adyendl.util.Environment;
 import com.adyen.dl.adapter.PaymentMethodsExpandableListAdapter;
 
@@ -21,6 +23,8 @@ import java.util.ArrayList;
  * Created by andrei on 9/13/16.
  */
 public class PaymentMethodsActivity extends Activity {
+
+    private static final String tag = PaymentMethodsActivity.class.getSimpleName();
 
     private ExpandableListView mPaymentMethodsExpandableListView;
     private PaymentMethodsExpandableListAdapter mPaymentMethodsExpandableListAdapter;
@@ -55,10 +59,19 @@ public class PaymentMethodsActivity extends Activity {
                 if(paymentMethod.getIssuers() != null && paymentMethod.getIssuers().size() > 0) {
                     mPaymentMethodsExpandableListView.expandGroup(groupPosition);
                 } else {
-                    String redirectUrlStr = PaymentsProcessor.getInstance().fetchRedirectUrl(configuration, payment, paymentMethod.getBrandCode(), null);
-                    Intent intent = new Intent(context, PaymentRedirectActivity.class);
-                    intent.putExtra("redirectUrl", redirectUrlStr);
-                    startActivity(intent);
+                    PaymentsProcessor.getInstance().fetchRedirectUrl(configuration, payment, paymentMethod.getBrandCode(), null, new AsyncOperationCallback() {
+                        @Override
+                        public void onSuccess(String redirectUrlStr) {
+                            Intent intent = new Intent(context, PaymentRedirectActivity.class);
+                            intent.putExtra("redirectUrl", redirectUrlStr);
+                            startActivity(intent);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable e, String errorMessage) {
+                            Log.e(tag, errorMessage, e);
+                        }
+                    });
                 }
                 return false;
             }
@@ -70,10 +83,19 @@ public class PaymentMethodsActivity extends Activity {
                 PaymentMethod paymentMethod = mPaymentMethods.get(groupPosition);
                 if(paymentMethod.getIssuers() != null && paymentMethod.getIssuers().size() > 0) {
                     PaymentMethod issuer = paymentMethod.getIssuers().get(childPosition);
-                    String redirectUrlStr = PaymentsProcessor.getInstance().fetchRedirectUrl(configuration, payment, paymentMethod.getBrandCode(), issuer.getIssuerId());
-                    Intent intent = new Intent(context, PaymentRedirectActivity.class);
-                    intent.putExtra("redirectUrl", redirectUrlStr);
-                    startActivity(intent);
+                    PaymentsProcessor.getInstance().fetchRedirectUrl(configuration, payment, paymentMethod.getBrandCode(), issuer.getIssuerId(), new AsyncOperationCallback() {
+                        @Override
+                        public void onSuccess(String redirectUrlStr) {
+                            Intent intent = new Intent(context, PaymentRedirectActivity.class);
+                            intent.putExtra("redirectUrl", redirectUrlStr);
+                            startActivity(intent);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable e, String errorMessage) {
+                            Log.e(tag, errorMessage, e);
+                        }
+                    });
                 }
                 return false;
             }

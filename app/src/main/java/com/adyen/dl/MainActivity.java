@@ -12,7 +12,6 @@ import com.adyen.adyendl.exceptions.PaymentMethodsRequestException;
 import com.adyen.adyendl.pojo.Configuration;
 import com.adyen.adyendl.pojo.Payment;
 import com.adyen.adyendl.pojo.PaymentMethod;
-import com.adyen.adyendl.services.PaymentMethodServiceImpl;
 import com.adyen.adyendl.util.AsyncOperationCallback;
 import com.adyen.adyendl.util.Environment;
 
@@ -56,37 +55,34 @@ public class MainActivity extends FragmentActivity {
     public void initPayment(View view) {
         fillPaymentMethodsRequest();
 
-
-        PaymentMethodServiceImpl paymentMethodService = new PaymentMethodServiceImpl(configuration, payment);
-        paymentMethodService.fetchPaymentMethodsAsync(new AsyncOperationCallback() {
+        PaymentsProcessor.getInstance().fetchPaymentMethods(configuration, payment, new AsyncOperationCallback() {
             @Override
             public void onSuccess(String response) {
-                Log.i("=======> ", response);
+                ArrayList<PaymentMethod> paymentMethods = new ArrayList<>();
+                try {
+                    JSONObject paymentMethodsJSON = new JSONObject(response);
+                    paymentMethods = jsonPaymentMethodsToArray(paymentMethodsJSON);
+                } catch (PaymentMethodsRequestException e) {
+                    Log.e(tag, e.getMessage(), e);
+                } catch (JSONException e) {
+                    Log.e(tag, e.getMessage(), e);
+                }
+
+                Log.i(tag, "Payment methods size: " + paymentMethods.size());
+
+                Intent intent = new Intent(context, PaymentMethodsActivity.class);
+                if (paymentMethods.size() > 0) {
+                    intent.putParcelableArrayListExtra("paymentMethods", paymentMethods);
+                }
+                startActivity(intent);
             }
 
             @Override
-            public void onFailure(String errorMessage) {
-
+            public void onFailure(Throwable e, String errorMessage) {
+                Log.e(tag, errorMessage, e);
             }
         });
 
-        JSONObject paymentMethodsJSON = PaymentsProcessor.getInstance().fetchPaymentMethods(configuration, payment);
-        ArrayList<PaymentMethod> paymentMethods = new ArrayList<>();
-        try {
-            paymentMethods = jsonPaymentMethodsToArray(paymentMethodsJSON);
-        } catch (PaymentMethodsRequestException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (JSONException e) {
-            Log.e(tag, e.getMessage(), e);
-        }
-
-        Log.i(tag, "Payment methods size: " + paymentMethods.size());
-
-        Intent intent = new Intent(this, PaymentMethodsActivity.class);
-        if(paymentMethods.size() > 0) {
-            intent.putParcelableArrayListExtra("paymentMethods", paymentMethods);
-        }
-        startActivity(intent);
     }
 
     private void fillPaymentMethodsRequest() {
