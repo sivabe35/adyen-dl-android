@@ -7,6 +7,6 @@ public interface AsyncOperationCallback {
 
     void onSuccess(String response);
 
-    void onFailure(String errorMessage);
+    void onFailure(Throwable e, String errorMessage);
 
 }

@@ -10,14 +10,9 @@ import com.adyen.adyendl.util.CheckoutHttpRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.net.URLEncoder;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import rx.Observable;
 import rx.Subscriber;
@@ -39,59 +34,9 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
         this.payment = payment;
     }
 
-    public class PaymentMethodsRequestThread implements Callable {
-
-        private URL url;
-        private String requestBody;
-
-        public PaymentMethodsRequestThread(URL url, String requestBody) {
-            this.url = url;
-            this.requestBody = requestBody;
-        }
-
-        @Override
-        public String call() throws Exception {
-            Log.i(tag, "Payment methods request body: " + requestBody);
-
-            CheckoutHttpRequest<String> checkoutHttpRequest = new CheckoutHttpRequest<>(url, requestBody);
-            String response = checkoutHttpRequest.stringPostRequestWithBody();
-
-            Log.i(tag, "Payment methods response: " + response);
-
-            return response;
-        }
-
-    }
-
-    @Override
-    public JSONObject fetchPaymentMethods() {
-        JSONObject merchantSignatureResponse = new RegisterMerchantServerServiceImpl(configuration, payment).fetchMerchantSignature();
-        JSONObject paymentMethodsResponseJson = null;
-        Log.i(tag, "Merchant signature response: " + merchantSignatureResponse.toString());
-        try {
-            String httpPostBody = buildPostBodyForPaymentMethodsRequest(merchantSignatureResponse);
-            ExecutorService executor = Executors.newFixedThreadPool(5);
-            Callable<String> callable = new PaymentMethodsRequestThread(Configuration.URLS.getHppDirectoryUrl(configuration.getEnvironment()), httpPostBody);
-            Future<String> futurePaymentMethodsResponse = executor.submit(callable);
-            if(futurePaymentMethodsResponse != null) {
-                String paymentMethodsResponse = futurePaymentMethodsResponse.get();
-                paymentMethodsResponseJson = new JSONObject(paymentMethodsResponse);
-            }
-        } catch (JSONException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (InterruptedException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (ExecutionException e) {
-            Log.e(tag, e.getMessage(), e);
-        }
-
-        return paymentMethodsResponseJson;
-    }
-
     @Override
     public void fetchPaymentMethodsAsync(final AsyncOperationCallback asyncOperationCallback) {
         JSONObject merchantSignatureResponse = new RegisterMerchantServerServiceImpl(configuration, payment).fetchMerchantSignature();
-        JSONObject paymentMethodsResponseJson = null;
 
         String httpPostBody = buildPostBodyForPaymentMethodsRequest(merchantSignatureResponse);
         final CheckoutHttpRequest<String> checkoutHttpRequest = new CheckoutHttpRequest<>(Configuration.URLS.getHppDirectoryUrl(configuration.getEnvironment()), httpPostBody);
@@ -102,11 +47,17 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
                 if(subscriber.isUnsubscribed()) {
                     return;
                 }
-                String response = checkoutHttpRequest.stringPostRequestWithBody();
+                String response = null;
+                try {
+                    response = checkoutHttpRequest.stringPostRequestWithBody();
+                } catch (IOException e) {
+                    subscriber.onError(e);
+                }
                 subscriber.onNext(response);
                 subscriber.onCompleted();
             }
-        }).subscribeOn(Schedulers.newThread())
+        })
+        .subscribeOn(Schedulers.newThread())
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe(new Subscriber<String>() {
             @Override
@@ -116,7 +67,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
 
             @Override
             public void onError(Throwable e) {
-
+                asyncOperationCallback.onFailure(e, e.getMessage());
             }
 
             @Override

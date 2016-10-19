@@ -25,33 +25,29 @@ public class CheckoutHttpRequest<T> {
         this.requestObject = requestObject;
     }
 
-    public String stringPostRequestWithBody() {
+    public String stringPostRequestWithBody() throws IOException {
         StringBuilder responseBuilder = new StringBuilder();
 
-        try {
-            HttpURLConnection serverConnection = (HttpURLConnection)serverUrl.openConnection();
-            serverConnection.setRequestMethod("POST");
-            serverConnection.setDoOutput(true);
+        HttpURLConnection serverConnection = (HttpURLConnection)serverUrl.openConnection();
+        serverConnection.setRequestMethod("POST");
+        serverConnection.setDoOutput(true);
 
-            OutputStream serverConnectionOutputStream = serverConnection.getOutputStream();
-            serverConnectionOutputStream.write(String.valueOf(requestObject).getBytes());
-            serverConnectionOutputStream.flush();
-            serverConnectionOutputStream.close();
+        OutputStream serverConnectionOutputStream = serverConnection.getOutputStream();
+        serverConnectionOutputStream.write(String.valueOf(requestObject).getBytes());
+        serverConnectionOutputStream.flush();
+        serverConnectionOutputStream.close();
 
-            int responseCode = serverConnection.getResponseCode();
-            Log.i(tag, "POST response code: " + responseCode);
+        int responseCode = serverConnection.getResponseCode();
+        Log.i(tag, "POST response code: " + responseCode);
 
-            if(responseCode == HttpURLConnection.HTTP_OK) {
-                BufferedReader connectionInputStream = new BufferedReader(new InputStreamReader(serverConnection.getInputStream()));
+        if(responseCode == HttpURLConnection.HTTP_OK) {
+            BufferedReader connectionInputStream = new BufferedReader(new InputStreamReader(serverConnection.getInputStream()));
 
-                String inputLine;
-                while((inputLine = connectionInputStream.readLine()) != null) {
-                    responseBuilder.append(inputLine);
-                }
-                connectionInputStream.close();
+            String inputLine;
+            while((inputLine = connectionInputStream.readLine()) != null) {
+                responseBuilder.append(inputLine);
             }
-        } catch (IOException e) {
-            Log.e(tag, e.getMessage(), e);
+            connectionInputStream.close();
         }
 
         return responseBuilder.toString();
