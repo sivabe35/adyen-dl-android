@@ -33,7 +33,9 @@ public class PaymentRedirectActivity extends Activity implements ServiceConnecti
         Intent resultIntent = getIntent();
         String redirectUrl = resultIntent.getStringExtra("redirectUrl");
 
-        bindCustomTabsService(redirectUrl);
+        if(!TextUtils.isEmpty(redirectUrl)) {
+            bindCustomTabsService(redirectUrl);
+        }
     }
 
     private void bindCustomTabsService(final String url) {
