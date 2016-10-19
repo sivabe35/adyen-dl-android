@@ -12,6 +12,8 @@ import com.adyen.adyendl.exceptions.PaymentMethodsRequestException;
 import com.adyen.adyendl.pojo.Configuration;
 import com.adyen.adyendl.pojo.Payment;
 import com.adyen.adyendl.pojo.PaymentMethod;
+import com.adyen.adyendl.services.PaymentMethodServiceImpl;
+import com.adyen.adyendl.util.AsyncOperationCallback;
 import com.adyen.adyendl.util.Environment;
 
 import org.json.JSONArray;
@@ -53,6 +55,20 @@ public class MainActivity extends FragmentActivity {
 
     public void initPayment(View view) {
         fillPaymentMethodsRequest();
+
+
+        PaymentMethodServiceImpl paymentMethodService = new PaymentMethodServiceImpl(configuration, payment);
+        paymentMethodService.fetchPaymentMethodsAsync(new AsyncOperationCallback() {
+            @Override
+            public void onSuccess(String response) {
+                Log.i("=======> ", response);
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+
+            }
+        });
 
         JSONObject paymentMethodsJSON = PaymentsProcessor.getInstance().fetchPaymentMethods(configuration, payment);
         ArrayList<PaymentMethod> paymentMethods = new ArrayList<>();

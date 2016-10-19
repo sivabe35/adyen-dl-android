@@ -1,5 +1,7 @@
 package com.adyen.adyendl.services;
 
+import com.adyen.adyendl.util.AsyncOperationCallback;
+
 import org.json.JSONObject;
 
 /**
@@ -8,5 +10,7 @@ import org.json.JSONObject;
 public interface PaymentMethodsService {
 
     JSONObject fetchPaymentMethods();
+
+    void fetchPaymentMethodsAsync(AsyncOperationCallback asyncOperationCallback);
 
 }
