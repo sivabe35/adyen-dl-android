@@ -35,44 +35,60 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
     }
 
     @Override
-    public void fetchPaymentMethodsAsync(final AsyncOperationCallback asyncOperationCallback) {
-        JSONObject merchantSignatureResponse = new RegisterMerchantServerServiceImpl(configuration, payment).fetchMerchantSignature();
+    public void fetchPaymentMethods(final AsyncOperationCallback asyncOperationCallback) {
+        RegisterMerchantServerServiceImpl registerMerchantServerService = new RegisterMerchantServerServiceImpl(configuration, payment);
 
-        String httpPostBody = buildPostBodyForPaymentMethodsRequest(merchantSignatureResponse);
-        final CheckoutHttpRequest<String> checkoutHttpRequest = new CheckoutHttpRequest<>(Configuration.URLS.getHppDirectoryUrl(configuration.getEnvironment()), httpPostBody);
-        
-        Observable.create(new Observable.OnSubscribe<String>() {
+        registerMerchantServerService.fetchMerchantSignature(new AsyncOperationCallback() {
             @Override
-            public void call(Subscriber<? super String> subscriber) {
-                if(subscriber.isUnsubscribed()) {
-                    return;
-                }
-                String response = null;
+            public void onSuccess(String response) {
                 try {
-                    response = checkoutHttpRequest.stringPostRequestWithBody();
-                } catch (IOException e) {
-                    subscriber.onError(e);
+                    String httpPostBody = buildPostBodyForPaymentMethodsRequest(new JSONObject(response));
+
+                    final CheckoutHttpRequest<String> checkoutHttpRequest = new CheckoutHttpRequest<>(Configuration.URLS.getHppDirectoryUrl(configuration.getEnvironment()), httpPostBody);
+
+                    Observable.create(new Observable.OnSubscribe<String>() {
+                        @Override
+                        public void call(Subscriber<? super String> subscriber) {
+                            if (subscriber.isUnsubscribed()) {
+                                return;
+                            }
+                            String response = null;
+                            try {
+                                response = checkoutHttpRequest.stringPostRequestWithBody();
+                                Log.i(tag, "Payment methods response: " + response);
+                            } catch (IOException e) {
+                                subscriber.onError(e);
+                            }
+                            subscriber.onNext(response);
+                            subscriber.onCompleted();
+                        }
+                    })
+                    .subscribeOn(Schedulers.newThread())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Subscriber<String>() {
+                        @Override
+                        public void onCompleted() {
+
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            asyncOperationCallback.onFailure(e, e.getMessage());
+                        }
+
+                        @Override
+                        public void onNext(String response) {
+                            asyncOperationCallback.onSuccess(response);
+                        }
+                    });
+                } catch (JSONException e) {
+                    asyncOperationCallback.onFailure(e, e.getMessage());
                 }
-                subscriber.onNext(response);
-                subscriber.onCompleted();
-            }
-        })
-        .subscribeOn(Schedulers.newThread())
-        .observeOn(AndroidSchedulers.mainThread())
-        .subscribe(new Subscriber<String>() {
-            @Override
-            public void onCompleted() {
-
             }
 
             @Override
-            public void onError(Throwable e) {
-                asyncOperationCallback.onFailure(e, e.getMessage());
-            }
-
-            @Override
-            public void onNext(String s) {
-                asyncOperationCallback.onSuccess(s);
+            public void onFailure(Throwable e, String errorMessage) {
+                asyncOperationCallback.onFailure(e, errorMessage);
             }
         });
     }

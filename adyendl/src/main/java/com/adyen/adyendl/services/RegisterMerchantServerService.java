@@ -1,12 +1,12 @@
 package com.adyen.adyendl.services;
 
-import org.json.JSONObject;
+import com.adyen.adyendl.util.AsyncOperationCallback;
 
 /**
  * Created by andrei on 5/20/16.
  */
 public interface RegisterMerchantServerService {
 
-    JSONObject fetchMerchantSignature();
+    void fetchMerchantSignature(AsyncOperationCallback asyncOperationCallback);
 
 }

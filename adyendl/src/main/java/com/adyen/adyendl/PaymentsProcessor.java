@@ -7,8 +7,7 @@ import com.adyen.adyendl.pojo.Payment;
 import com.adyen.adyendl.services.PaymentMethodServiceImpl;
 import com.adyen.adyendl.services.PaymentMethodsService;
 import com.adyen.adyendl.services.RetrieveRedirectUrlServiceImpl;
-
-import org.json.JSONObject;
+import com.adyen.adyendl.util.AsyncOperationCallback;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -35,10 +34,20 @@ public class PaymentsProcessor {
         return mInstance;
     }
 
-    public JSONObject fetchPaymentMethods(Configuration configuration, Payment payment) {
+    public void fetchPaymentMethods(Configuration configuration, Payment payment, final AsyncOperationCallback asyncOperationCallback) {
         PaymentMethodsService paymentMethodsService = new PaymentMethodServiceImpl(configuration, payment);
-        JSONObject paymentMethodsJSON = paymentMethodsService.fetchPaymentMethods();
-        return paymentMethodsJSON;
+        paymentMethodsService.fetchPaymentMethods(new AsyncOperationCallback() {
+            @Override
+            public void onSuccess(String response) {
+                asyncOperationCallback.onSuccess(response);
+            }
+
+            @Override
+            public void onFailure(Throwable e, String errorMessage) {
+                asyncOperationCallback.onFailure(e, errorMessage);
+            }
+        });
+
     }
 
     public String fetchRedirectUrl(Configuration configuration, Payment payment, String brandCode, String issuerId) {

@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.adyen.adyendl.pojo.Configuration;
 import com.adyen.adyendl.pojo.Payment;
+import com.adyen.adyendl.util.AsyncOperationCallback;
 import com.adyen.adyendl.util.CheckoutHttpRequest;
 
 import org.json.JSONException;
@@ -13,10 +14,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by andrei on 9/15/16.
@@ -63,25 +65,54 @@ public class RetrieveRedirectUrlServiceImpl implements RetrieveRedirectUrlServic
     }
 
     @Override
-    public String fetchRedirectUrl() {
-        JSONObject merchantSignatureResponse = new RegisterMerchantServerServiceImpl(configuration, payment, brandCode, issuerId).fetchMerchantSignature();
-        String redirectUrlResponse = null;
-        Log.i(tag, "Merchant signature response: " + merchantSignatureResponse.toString());
-        try {
-            String httpPostBody = buildPostBodyForRedirectUrlRequest(merchantSignatureResponse);
-            ExecutorService executor = Executors.newFixedThreadPool(5);
-            Callable<String> callable = new RedirectUrlRequestThread(Configuration.URLS.getHppDetailsUrl(configuration.getEnvironment()), httpPostBody);
-            Future<String> futureRedirectUrlResponse = executor.submit(callable);
-            if(futureRedirectUrlResponse != null) {
-                redirectUrlResponse = futureRedirectUrlResponse.get();
-            }
-        } catch (InterruptedException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (ExecutionException e) {
-            Log.e(tag, e.getMessage(), e);
-        }
+    public void fetchRedirectUrl(final AsyncOperationCallback asyncOperationCallback) {
+        RegisterMerchantServerServiceImpl registerMerchantServerService = new RegisterMerchantServerServiceImpl(configuration, payment, brandCode, issuerId);
+        registerMerchantServerService.fetchMerchantSignature(new AsyncOperationCallback() {
+            @Override
+            public void onSuccess(final String response) {
+                Observable.create(new Observable.OnSubscribe<String>() {
+                    @Override
+                    public void call(Subscriber<? super String> subscriber) {
+                        if (subscriber.isUnsubscribed()) {
+                            return;
+                        }
+                        try {
+                            String httpPostBody = buildPostBodyForRedirectUrlRequest(new JSONObject(response));
+                            CheckoutHttpRequest<String> checkoutHttpRequest = new CheckoutHttpRequest<>(Configuration.URLS.getHppDetailsUrl(configuration.getEnvironment()), httpPostBody);
+                            String responseUrl = checkoutHttpRequest.fetchRedirectUrl();
+                            Log.i(tag, "Redirect URL response: " + responseUrl);
+                            subscriber.onNext(responseUrl);
+                            subscriber.onCompleted();
+                        } catch (JSONException e) {
+                            onFailure(e, e.getMessage());
+                        }
+                    }
+                })
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<String>() {
+                    @Override
+                    public void onCompleted() {
 
-        return redirectUrlResponse;
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        asyncOperationCallback.onFailure(e, e.getMessage());
+                    }
+
+                    @Override
+                    public void onNext(String response) {
+                        asyncOperationCallback.onSuccess(response);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable e, String errorMessage) {
+
+            }
+        });
     }
 
     private String buildPostBodyForRedirectUrlRequest(JSONObject merchantSignatureResponse) {

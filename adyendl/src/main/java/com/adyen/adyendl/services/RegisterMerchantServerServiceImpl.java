@@ -5,18 +5,18 @@ import android.util.Log;
 
 import com.adyen.adyendl.pojo.Configuration;
 import com.adyen.adyendl.pojo.Payment;
+import com.adyen.adyendl.util.AsyncOperationCallback;
 import com.adyen.adyendl.util.CheckoutHttpRequest;
 import com.adyen.adyendl.util.Environment;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 
 /**
@@ -50,46 +50,48 @@ public class RegisterMerchantServerServiceImpl implements RegisterMerchantServer
         this.issuerId = issuerId;
     }
 
-    public class MerchantSignatureRequestThread implements Callable {
-
-        private URL url;
-
-        public MerchantSignatureRequestThread(URL url) {
-            this.url = url;
-        }
-
-        @Override
-        public String call() throws Exception {
-            CheckoutHttpRequest<String> checkoutHttpRequest = new CheckoutHttpRequest<>(url, null);
-            String response = checkoutHttpRequest.stringPostRequest();
-            return response;
-        }
-
-    }
-
     @Override
-    public JSONObject fetchMerchantSignature() {
-        JSONObject merchantSignatureResponseJson = null;
-        try {
-            String merchantSignatureRequestUrl = buildMerchantSignatureRequestURL();
-            Log.i(tag, "Merchant singature request URL: " + merchantSignatureRequestUrl);
-            ExecutorService executor = Executors.newFixedThreadPool(5);
-            Callable<String> callable = new MerchantSignatureRequestThread(new URL(merchantSignatureRequestUrl));
-            if(executor.submit(callable) != null) {
-                String merchantSignatureResponse = executor.submit(callable).get();
-                Log.i(tag, "Merchant signature response: " + merchantSignatureResponse);
-                merchantSignatureResponseJson = new JSONObject(merchantSignatureResponse);
+    public void fetchMerchantSignature(final AsyncOperationCallback asyncOperationCallback) {
+        Observable.create(new Observable.OnSubscribe<String>() {
+            @Override
+            public void call(Subscriber<? super String> subscriber) {
+                if (subscriber.isUnsubscribed()) {
+                    return;
+                }
+                String merchantSignatureRequestUrl = buildMerchantSignatureRequestURL();
+                Log.i(tag, "Merchant singature request URL: " + merchantSignatureRequestUrl);
+                CheckoutHttpRequest<String> checkoutHttpRequest = null;
+                try {
+                    checkoutHttpRequest = new CheckoutHttpRequest<>(new URL(merchantSignatureRequestUrl), null);
+                    String response = checkoutHttpRequest.stringPostRequest();
+                    Log.i(tag, "Merchant signature response: " + response);
+                    subscriber.onNext(response);
+                } catch (MalformedURLException e) {
+                    subscriber.onError(e);
+                } catch (IOException e) {
+                    subscriber.onError(e);
+                }
+                subscriber.onCompleted();
             }
-        } catch (MalformedURLException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (InterruptedException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (ExecutionException e) {
-            Log.e(tag, e.getMessage(), e);
-        } catch (JSONException e) {
-            Log.e(tag, e.getMessage(), e);
-        }
-        return merchantSignatureResponseJson;
+        })
+        .subscribeOn(Schedulers.newThread())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(new Subscriber<String>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                asyncOperationCallback.onFailure(e, e.getMessage());
+            }
+
+            @Override
+            public void onNext(String response) {
+                asyncOperationCallback.onSuccess(response);
+            }
+        });
     }
 
     private String buildMerchantSignatureRequestURL() {

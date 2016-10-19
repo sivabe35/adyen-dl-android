@@ -53,22 +53,19 @@ public class CheckoutHttpRequest<T> {
         return responseBuilder.toString();
     }
 
-    public String stringPostRequest() {
+    public String stringPostRequest() throws IOException {
         StringBuilder responseBuilder = new StringBuilder();
 
-        try {
-            HttpURLConnection urlConnection = (HttpURLConnection)serverUrl.openConnection();
-            urlConnection.setDoOutput(true);
-            urlConnection.setRequestMethod("POST");
+        HttpURLConnection urlConnection = (HttpURLConnection)serverUrl.openConnection();
+        urlConnection.setDoOutput(true);
+        urlConnection.setRequestMethod("POST");
 
-            Scanner httpResponseScanner = new Scanner(urlConnection.getInputStream());
-            while(httpResponseScanner.hasNextLine()) {
-                responseBuilder.append(httpResponseScanner.nextLine());
-            }
-            httpResponseScanner.close();
-        } catch (IOException e) {
-            Log.e(tag, e.getMessage(), e);
+        Scanner httpResponseScanner = new Scanner(urlConnection.getInputStream());
+        while(httpResponseScanner.hasNextLine()) {
+            responseBuilder.append(httpResponseScanner.nextLine());
         }
+        httpResponseScanner.close();
+
         return responseBuilder.toString();
     }
 

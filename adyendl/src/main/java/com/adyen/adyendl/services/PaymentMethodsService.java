@@ -7,6 +7,6 @@ import com.adyen.adyendl.util.AsyncOperationCallback;
  */
 public interface PaymentMethodsService {
 
-    void fetchPaymentMethodsAsync(AsyncOperationCallback asyncOperationCallback);
+    void fetchPaymentMethods(AsyncOperationCallback asyncOperationCallback);
 
 }
