@@ -9,7 +9,7 @@ This library is suited to accept [250+ local payment methods](https://www.adyen.
 ## Requirements
 The AdyenDL-Android library is written in Java and is compatible with apps supporting Android 4.4 and up. 
 
-Although most of the integration complexity is wrapped in this library, you also need to set up a merchant server to validate the integrity of each payment request/response. Please find an example of the API for the merchants server [here](https://github.com/Adyen/adyen-checkout-ios/tree/master/ServerSideExample/Parse).
+Although most of the integration complexity is wrapped in this library, you also need to set up a merchant server to validate the integrity of each payment request/response. Please find an example of the API for the merchants server [here](https://github.com/Adyen/adyen-dl-android/blob/master/SERVER.md).
 
 ## Example
 
@@ -67,9 +67,9 @@ Create environment configuration and set up a payment processor.
 ```java
 configuration = new Configuration(
     Environment.LIVE, //  Can be either TEST or  LIVE.
-    "ENTER_URL",  //  Your server URL to calculate a signature for the payment.
-    "ENTER_URL",  // Your server URL to calculate a signature for the payment's result.
-    "ENTER_URL" // Your server URL to fetch a status of the payment.
+    "Enter paymentSignatureURL",  //  Your server URL to calculate a signature for the payment.
+    "Enter paymentResultSignatureURL",  // Your server URL to calculate a signature for the payment's result.
+    "Enter paymentStatusURL" // Your server URL to fetch a status of the payment.
 );
 ```
 
