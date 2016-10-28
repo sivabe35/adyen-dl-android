@@ -86,7 +86,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void fillPaymentMethodsRequest() {
-        configuration = new Configuration(Environment.LIVE, "http://www.mozuma.nl/adyen/api.php", null, null);
+        configuration = new Configuration(Environment.TEST, "http://www.mozuma.nl/adyen", null, null);
         payment = new Payment();
 
         payment.setMerchantReference("Reference");

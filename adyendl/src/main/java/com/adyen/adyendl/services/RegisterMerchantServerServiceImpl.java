@@ -95,7 +95,7 @@ public class RegisterMerchantServerServiceImpl implements RegisterMerchantServer
     }
 
     private String buildMerchantSignatureRequestURL() {
-        StringBuilder merchantSignatureRequestURL = new StringBuilder(configuration.getPaymentSignatureURL() + "?method=calculateSignature&action=paymentInitiation");
+        StringBuilder merchantSignatureRequestURL = new StringBuilder(configuration.getPaymentSignatureURL() + "/payment/signature");
 
         String environment;
         if(Environment.LIVE.equals(configuration.getEnvironment())) {
