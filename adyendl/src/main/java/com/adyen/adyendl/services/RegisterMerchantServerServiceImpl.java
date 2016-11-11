@@ -63,6 +63,7 @@ public class RegisterMerchantServerServiceImpl implements RegisterMerchantServer
 
                 HttpClient httpClient = new HttpClient();
                 try {
+                    Log.i(tag, "Payment signature request: " + buildMerchantSignatureJsonRequest().toString());
                     String response = httpClient.post(configuration.getPaymentSignatureURL() + "/payment/signature", buildMerchantSignatureJsonRequest().toString());
                     Log.i(tag, "Merchant signature response: " + response);
                     subscriber.onNext(response);
