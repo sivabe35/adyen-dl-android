@@ -3,15 +3,17 @@ package com.adyen.adyendl.services;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.adyen.adyendl.internals.HttpClient;
 import com.adyen.adyendl.pojo.Configuration;
 import com.adyen.adyendl.pojo.Payment;
 import com.adyen.adyendl.util.AsyncOperationCallback;
-import com.adyen.adyendl.util.CheckoutHttpRequest;
 import com.adyen.adyendl.util.Environment;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 
 import rx.Observable;
 import rx.Subscriber;
@@ -58,17 +60,17 @@ public class RegisterMerchantServerServiceImpl implements RegisterMerchantServer
                 if (subscriber.isUnsubscribed()) {
                     return;
                 }
-                String merchantSignatureRequestUrl = buildMerchantSignatureRequestURL();
-                Log.i(tag, "Merchant singature request URL: " + merchantSignatureRequestUrl);
-                CheckoutHttpRequest<String> checkoutHttpRequest = null;
+
+                HttpClient httpClient = new HttpClient();
                 try {
-                    checkoutHttpRequest = new CheckoutHttpRequest<>(new URL(merchantSignatureRequestUrl), null);
-                    String response = checkoutHttpRequest.stringPostRequest();
+                    String response = httpClient.post(configuration.getPaymentSignatureURL() + "/payment/signature", buildMerchantSignatureJsonRequest().toString());
                     Log.i(tag, "Merchant signature response: " + response);
                     subscriber.onNext(response);
                 } catch (MalformedURLException e) {
                     subscriber.onError(e);
                 } catch (IOException e) {
+                    subscriber.onError(e);
+                } catch (Exception e) {
                     subscriber.onError(e);
                 }
                 subscriber.onCompleted();
@@ -103,9 +105,9 @@ public class RegisterMerchantServerServiceImpl implements RegisterMerchantServer
         } else {
             environment = "test";
         }
-        merchantSignatureRequestURL.append("&environment=" + environment);
+        //merchantSignatureRequestURL.append("?environment=" + environment);
 
-        merchantSignatureRequestURL.append("&paymentAmount=" + payment.getAmount());
+        merchantSignatureRequestURL.append("?paymentAmount=" + payment.getAmount());
         merchantSignatureRequestURL.append("&merchantReference=" + payment.getMerchantReference());
         merchantSignatureRequestURL.append("&countryCode=" + payment.getCountryCode());
         merchantSignatureRequestURL.append("&currencyCode=" + payment.getCurrency());
@@ -119,6 +121,33 @@ public class RegisterMerchantServerServiceImpl implements RegisterMerchantServer
         }
 
         return merchantSignatureRequestURL.toString();
+    }
+
+    private JSONObject buildMerchantSignatureJsonRequest() throws JSONException {
+        JSONObject merchantSignatureJsonRequest = new JSONObject();
+
+        String environment;
+        if(Environment.LIVE.equals(configuration.getEnvironment())) {
+            environment = "live";
+        } else {
+            environment = "test";
+        }
+
+        merchantSignatureJsonRequest.put("environment", environment);
+        merchantSignatureJsonRequest.put("paymentAmount", payment.getAmount());
+        merchantSignatureJsonRequest.put("merchantReference", payment.getMerchantReference());
+        merchantSignatureJsonRequest.put("countryCode", payment.getCountryCode());
+        merchantSignatureJsonRequest.put("currencyCode", payment.getCurrency());
+
+        if(!TextUtils.isEmpty(brandCode)) {
+            merchantSignatureJsonRequest.put("brandCode", brandCode);
+        }
+
+        if(!TextUtils.isEmpty(issuerId)) {
+            merchantSignatureJsonRequest.put("issuerId", issuerId);
+        }
+
+        return merchantSignatureJsonRequest;
     }
 
 }

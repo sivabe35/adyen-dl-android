@@ -2,10 +2,10 @@ package com.adyen.adyendl.services;
 
 import android.util.Log;
 
+import com.adyen.adyendl.internals.HttpClient;
 import com.adyen.adyendl.pojo.Configuration;
 import com.adyen.adyendl.pojo.Payment;
 import com.adyen.adyendl.util.AsyncOperationCallback;
-import com.adyen.adyendl.util.CheckoutHttpRequest;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -42,9 +42,9 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
             @Override
             public void onSuccess(String response) {
                 try {
-                    String httpPostBody = buildPostBodyForPaymentMethodsRequest(new JSONObject(response));
+                    final String httpPostBody = buildPostBodyForPaymentMethodsRequest(new JSONObject(response));
 
-                    final CheckoutHttpRequest<String> checkoutHttpRequest = new CheckoutHttpRequest<>(Configuration.URLS.getHppDirectoryUrl(configuration.getEnvironment()), httpPostBody);
+                    final HttpClient httpClient = new HttpClient();
 
                     Observable.create(new Observable.OnSubscribe<String>() {
                         @Override
@@ -54,9 +54,11 @@ public class PaymentMethodServiceImpl implements PaymentMethodsService {
                             }
                             String response = null;
                             try {
-                                response = checkoutHttpRequest.stringPostRequestWithBody();
+                                response = httpClient.post(Configuration.URLS.getHppDirectoryUrl(configuration.getEnvironment()).toString(), httpPostBody);
                                 Log.i(tag, "Payment methods response: " + response);
                             } catch (IOException e) {
+                                subscriber.onError(e);
+                            } catch (Exception e) {
                                 subscriber.onError(e);
                             }
                             subscriber.onNext(response);

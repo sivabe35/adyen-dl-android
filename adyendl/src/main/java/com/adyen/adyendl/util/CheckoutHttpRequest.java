@@ -58,7 +58,7 @@ public class CheckoutHttpRequest<T> {
 
         HttpURLConnection urlConnection = (HttpURLConnection)serverUrl.openConnection();
         urlConnection.setDoOutput(true);
-        urlConnection.setRequestMethod("POST");
+        urlConnection.setRequestMethod("GET");
 
         Scanner httpResponseScanner = new Scanner(urlConnection.getInputStream());
         while(httpResponseScanner.hasNextLine()) {
