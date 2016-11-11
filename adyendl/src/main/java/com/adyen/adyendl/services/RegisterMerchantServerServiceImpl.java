@@ -126,14 +126,6 @@ public class RegisterMerchantServerServiceImpl implements RegisterMerchantServer
     private JSONObject buildMerchantSignatureJsonRequest() throws JSONException {
         JSONObject merchantSignatureJsonRequest = new JSONObject();
 
-        String environment;
-        if(Environment.LIVE.equals(configuration.getEnvironment())) {
-            environment = "live";
-        } else {
-            environment = "test";
-        }
-
-        merchantSignatureJsonRequest.put("environment", environment);
         merchantSignatureJsonRequest.put("paymentAmount", payment.getAmount());
         merchantSignatureJsonRequest.put("merchantReference", payment.getMerchantReference());
         merchantSignatureJsonRequest.put("countryCode", payment.getCountryCode());
