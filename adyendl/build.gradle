@@ -8,7 +8,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 23
         versionCode 1
-        versionName "1.2.0"
+        versionName "1.3.0"
     }
     buildTypes {
         release {
@@ -22,7 +22,7 @@ task prepareSDKRelease(type: Copy) {
     from 'build/outputs/aar/adyendl-release.aar'
     into '.'
     rename {String fileName ->
-        fileName.replace('release', '1.2.0');
+        fileName.replace('release', '1.3.0');
     }
 }
 
